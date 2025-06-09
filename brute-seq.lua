@@ -1,0 +1,287 @@
+-- @description brute-seq Drumbrute Impact sequencer for Reaper
+-- @author eritiro
+-- @license GPL v3
+-- @version 0.0.1
+-- @provides
+--   Modules/*.lua
+--   Images/*.png
+--   Fonts/*.ttc
+
+-- General configuration
+time_resolution = 4         -- 4 currentPattern.steps per beat (adjust if you changed it)
+local tracks = {
+    { name = "Kick",        note = 36 },  -- C2
+    { name = "Snare 1",     note = 37 },
+    { name = "Snare 2",     note = 38 },
+    { name = "Tom High",    note = 39 },
+    { name = "Tom Low",     note = 40 },
+    { name = "Cymbal",      note = 41 },
+    { name = "Cowbell",     note = 42 },
+    { name = "Closed Hat",  note = 43 },
+    { name = "Open Hat",    note = 44 },
+    { name = "FM Drum",     note = 45 },
+}
+
+-- velocity used to add regular notes
+local normalVelocity = 100
+
+-- velocity used to add accented notes
+local accentVelocity = 127
+
+-- used to understand whether a note is accented. it has to be between the two accent and the normal velocity
+local accentThreshold = 110 
+
+local reaper = reaper
+script_path = debug.getinfo(1, "S").source:match [[^@?(.*[\/])[^\/]-$]]
+local modules_path = script_path .. 'Modules/'
+
+-- requires script_path
+dofile(script_path .. 'Modules/GUI.lua')
+-- requires time_resolution
+dofile(script_path .. 'Modules/Transport.lua')
+
+dofile(script_path .. 'Modules/MIDI.lua')
+
+local function passSpacebar(ctx)
+    local spaceKey  = reaper.ImGui_Key_Space()
+    local CMD_PLAY   = 40044   -- Transport: Play/Stop
+    
+    if reaper.ImGui_IsKeyPressed(ctx, reaper.ImGui_Key_Space(), false) then
+        reaper.Main_OnCommand(CMD_PLAY, 0)
+    end
+end
+
+local function passThroughShortcuts(ctx)
+    passSpacebar(ctx)
+end
+
+local Pattern = {}
+
+function Pattern:new(item)
+    local obj = {
+        item  = item,                      
+        steps = getItemSteps(item),
+        times = getItemTimes(item),
+    }
+    return setmetatable(obj, Pattern)
+end
+
+local function getPattern(track, index)
+    local item = reaper.GetTrackMediaItem(track, index)
+    return item and Pattern:new(item) or nil
+end
+
+-----------------------------------------------------------------------
+-- main loop
+-----------------------------------------------------------------------
+local followCursor = reaper.GetExtState("BruteSeq", "FollowCursor") == "1"
+local loopPattern  = reaper.GetExtState("BruteSeq", "LoopPattern")  == "1"
+local loopSong     = reaper.GetExtState("BruteSeq", "LoopSong")     == "1"
+local ripple       = reaper.GetExtState("BruteSeq", "Ripple")       == "1"
+
+local function loop()
+    passThroughShortcuts(ctx)
+    reaper.ImGui_SetNextWindowSize(ctx,900,420,reaper.ImGui_Cond_FirstUseEver())
+    if reaper.ImGui_Begin(ctx,'brute-seq',true) then
+        reaper.ImGui_PushFont(ctx,font)
+        reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
+
+        local drumTrack      = getDrumbruteTrack()
+        local patternCount   = reaper.CountTrackMediaItems(drumTrack)
+        
+        currentPatternIndex = math.min(currentPatternIndex or 1, patternCount);
+        local currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+
+        if currentPattern then
+            -- top bar
+            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 4)
+            
+            reaper.ImGui_SameLine(ctx) 
+            reaper.ImGui_AlignTextToFramePadding(ctx)
+            reaper.ImGui_Text(ctx, 'Pattern:')
+            reaper.ImGui_SameLine(ctx)
+            changedPattern, currentPatternIndex = drawSlider(ctx, '##Pattern', currentPatternIndex, 1, patternCount, 140)
+            reaper.ImGui_SameLine(ctx)
+            reaper.ImGui_Text(ctx, 'Steps:')
+            reaper.ImGui_SameLine(ctx)
+            changedSteps, currentPattern.steps = drawSlider(ctx, '##Length', currentPattern.steps, 1, 64, 140, 4, 4)
+            reaper.ImGui_SameLine(ctx)
+            reaper.ImGui_Text(ctx, 'Times:')
+            reaper.ImGui_SameLine(ctx)
+            changedTimes, currentPattern.times = drawSlider(ctx, '##Times', currentPattern.times, 1, 32, 140, 4, 4)
+
+            reaper.ImGui_SameLine(ctx)
+            addedPattern = reaper.ImGui_Button(ctx, "Add Pattern")
+
+            -- draw options
+            reaper.ImGui_SameLine(ctx)
+            changedFollowOption, followCursor = reaper.ImGui_Checkbox(ctx, "Follow", followCursor)
+            reaper.ImGui_SameLine(ctx)
+            changedLoopPatternOption, loopPattern = reaper.ImGui_Checkbox(ctx, "Loop pattern", loopPattern)
+            reaper.ImGui_SameLine(ctx)
+            changedLoopSongOption, loopSong = reaper.ImGui_Checkbox(ctx, "Loop song", loopSong)
+            reaper.ImGui_SameLine(ctx)
+            changedRippleOption, ripple = reaper.ImGui_Checkbox(ctx, "Ripple", ripple)
+
+            reaper.ImGui_PopStyleVar(ctx, 1)
+
+            -- ensure loop consistency
+            loopSong = loopSong and not changedLoopPatternOption
+            loopPattern = loopPattern and not changedLoopSongOption
+
+
+            if changedFollowOption then
+                reaper.SetExtState("BruteSeq", "FollowCursor", followCursor and "1" or "0", true)
+            end
+
+            if changedLoopPatternOption or changedLoopSongOption then
+                reaper.SetExtState("BruteSeq", "LoopPattern", loopPattern and "1" or "0", true)
+                reaper.SetExtState("BruteSeq", "LoopSong", loopSong and "1" or "0", true)
+            end
+
+            if changedRippleOption then
+                reaper.SetExtState("BruteSeq", "Ripple", ripple and "1" or "0", true)
+            end
+
+            if addedPattern then
+                createPattern(currentPattern.steps > 0 and currentPattern.steps or 16)
+                changedPattern = true
+                if followCursor then
+                    currentPatternIndex = patternCount + 1
+                end
+            end
+
+            -- Jump to step
+            if changedPattern and followCursor then
+                currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+                jumpToStep(currentPattern.item, 0)
+            end
+
+            -- Resize pattern
+            if changedSteps or changedTimes then
+                reaper.Undo_BeginBlock()
+                local originalLength = reaper.GetMediaItemInfo_Value(currentPattern.item, 'D_LENGTH')
+                if changedSteps then
+                    resizeSource(currentPattern.item, currentPattern.steps)
+                end
+                resizeItem(currentPattern.item, currentPattern.times)
+                if ripple then
+                    rippleFollowingItems(drumTrack, currentPattern.item, originalLength)
+                end
+                reaper.Undo_EndBlock('Resize pattern',-1)
+            end
+
+            -- Change time selection
+            if changedPattern or changedLoopPatternOption or changedLoopSongOption or changedSteps or changedTimes then
+                currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+                if loopPattern then
+                    setTimeSelectionFromItem(currentPattern.item)
+                elseif loopSong then
+                    setTimeSelectionFromTrack(drumTrack)
+                end
+            end
+
+            -- Follow cursor
+            local itemIndexAtCursor = getItemIndexAtCursor(drumTrack)
+            if followCursor and itemIndexAtCursor and itemIndexAtCursor ~= currentPatternIndex - 1 then
+                currentPatternIndex = itemIndexAtCursor + 1
+                currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+            end
+
+            reaper.ImGui_Separator(ctx)
+
+            -- Navigation Step Bar
+            local currentStepTotal = getCurrentStep(currentPattern.item)
+            local currentStep = currentStepTotal and (currentStepTotal % currentPattern.steps) + 1 or -1 
+            local currentTime = currentStepTotal and (currentStepTotal // currentPattern.steps) + 1 or -1
+
+            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_ItemSpacing(), 2, 2) -- (x,y)
+            
+            reaper.ImGui_Image(ctx, images.Channel_button_on.i, images.Channel_button_on.w, images.Channel_button_on.h)
+            for s=1, currentPattern.steps do
+                reaper.ImGui_SameLine(ctx)
+                local isCurrent = currentStep and s == currentStep
+                drawStepCursor(isCurrent)
+                
+                if reaper.ImGui_IsItemClicked(ctx) then
+                    jumpToStep(currentPattern.item, s - 1)
+                end
+            end
+
+            if currentPattern.times > 1 then
+                drawTimesSeparator()
+                for s=1, currentPattern.times do
+                    reaper.ImGui_SameLine(ctx)
+                    local isCurrent = currentTime and s == currentTime
+                    drawStepCursor(isCurrent)
+
+                    if reaper.ImGui_IsItemClicked(ctx) then
+                        jumpToStep(currentPattern.item, (s - 1) * currentPattern.steps)
+                    end
+                end    
+            end
+            
+            -- Step Grid
+
+            for ti,trk in ipairs(tracks) do
+                local id       = '##ch' .. ti
+                local selected = false
+                local sprite   = selected and images.Channel_button_on
+                                            or  images.Channel_button_off
+
+                reaper.ImGui_Image(ctx, sprite.i, sprite.w, sprite.h)
+
+                local minX,minY = reaper.ImGui_GetItemRectMin(ctx)
+                local maxX,maxY = reaper.ImGui_GetItemRectMax(ctx)
+                local tw,th     = reaper.ImGui_CalcTextSize(ctx, trk.name)
+                local cx        = (minX + maxX - tw) * 0.5
+                local cy        = (minY + maxY - th) * 0.5
+                local dl        = reaper.ImGui_GetWindowDrawList(ctx)
+                reaper.ImGui_DrawList_AddText(dl, cx, cy, 0xFFFFFFFF, trk.name)
+                reaper.ImGui_SameLine(ctx)
+
+                for s=1, currentPattern.steps do
+                    local stepVelocity = getStepVelocity(currentPattern.item, s, trk.note)
+                    local active = stepVelocity ~= nil
+                    local odd    = ((s-1)//4)%2==0
+                    local accent = active and (stepVelocity > accentThreshold) 
+
+                    drawStepButton(active, odd, accent)
+
+                    if s < currentPattern.steps then reaper.ImGui_SameLine(ctx) end
+
+                    local clicked = reaper.ImGui_IsItemClicked(ctx)
+                    if clicked then                    
+                        local shift = reaper.ImGui_IsKeyDown(ctx, reaper.ImGui_Key_LeftShift())
+
+                        local shouldDelete = active
+                        local shouldCreate = not active or (shift ~= accent)
+                        
+                        if shouldDelete then
+                            deleteMidiNote(currentPattern.item, s, trk.note)
+                        end
+                        if shouldCreate then
+                            local newVelocity = shift and accentVelocity or normalVelocity
+                            addMidiNote(currentPattern.item, s, trk.note, newVelocity)
+                        end
+                    end
+                end
+            end
+            reaper.ImGui_PopStyleVar(ctx)
+        else
+            reaper.ImGui_SameLine(ctx) 
+            reaper.ImGui_AlignTextToFramePadding(ctx)
+            reaper.ImGui_Text(ctx, "Add a pattern to start")
+            reaper.ImGui_SameLine(ctx)
+            if reaper.ImGui_Button(ctx, "Add Pattern") then
+                createPattern(16)
+                currentPatternIndex = 1
+            end
+        end
+        reaper.ImGui_PopStyleColor(ctx)
+        reaper.ImGui_PopFont(ctx)
+    end
+    reaper.ImGui_End(ctx)
+    reaper.defer(loop)
+end
+loop()
