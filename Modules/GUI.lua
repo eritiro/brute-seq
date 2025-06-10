@@ -101,3 +101,15 @@ function SameLineAutoWrap(ctx, widgetWidth, spacing)
     end
     reaper.ImGui_SameLine(ctx, spacing)
 end
+
+function drawTrackLabel(ctx, sprite, text)
+  reaper.ImGui_Image(ctx, sprite.i, sprite.w, sprite.h)
+
+  local minX,minY = reaper.ImGui_GetItemRectMin(ctx)
+  local maxX,maxY = reaper.ImGui_GetItemRectMax(ctx)
+  local tw,th     = reaper.ImGui_CalcTextSize(ctx, text)
+  local cx        = (minX + maxX - tw) * 0.5
+  local cy        = (minY + maxY - th) * 0.5
+  local dl        = reaper.ImGui_GetWindowDrawList(ctx)
+  reaper.ImGui_DrawList_AddText(dl, cx, cy, 0xFFFFFFFF, text)
+end

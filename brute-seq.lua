@@ -95,11 +95,11 @@ local function loop()
         reaper.ImGui_PushFont(ctx,font)
         reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
 
-        local drumTrack      = getDrumbruteTrack()
-        local patternCount   = reaper.CountTrackMediaItems(drumTrack)
+        local sequencerTrack      = getSequencerTrack()
+        local patternCount   = reaper.CountTrackMediaItems(sequencerTrack)
         
         currentPatternIndex = math.min(currentPatternIndex or 1, patternCount);
-        local currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+        local currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
 
         if currentPattern then
             -- top bar
@@ -158,7 +158,7 @@ local function loop()
             end
 
             if addedPattern then
-                createPattern(currentPattern.steps > 0 and currentPattern.steps or 16)
+                createPattern(sequencerTrack, currentPattern.steps > 0 and currentPattern.steps or 16)
                 changedPattern = true
                 if followCursor then
                     currentPatternIndex = patternCount + 1
@@ -167,7 +167,7 @@ local function loop()
 
             -- Jump to step
             if changedPattern and followCursor then
-                currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+                currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
                 jumpToStep(currentPattern.item, 0)
             end
 
@@ -180,26 +180,26 @@ local function loop()
                 end
                 resizeItem(currentPattern.item, currentPattern.times)
                 if ripple then
-                    rippleFollowingItems(drumTrack, currentPattern.item, originalLength)
+                    rippleFollowingItems(sequencerTrack, currentPattern.item, originalLength)
                 end
                 reaper.Undo_EndBlock('Resize pattern',-1)
             end
 
             -- Change time selection
             if changedPattern or changedLoopPatternOption or changedLoopSongOption or changedSteps or changedTimes then
-                currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+                currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
                 if loopPattern then
                     setTimeSelectionFromItem(currentPattern.item)
                 elseif loopSong then
-                    setTimeSelectionFromTrack(drumTrack)
+                    setTimeSelectionFromTrack(sequencerTrack)
                 end
             end
 
             -- Follow cursor
-            local itemIndexAtCursor = getItemIndexAtCursor(drumTrack)
+            local itemIndexAtCursor = getItemIndexAtCursor(sequencerTrack)
             if followCursor and itemIndexAtCursor and itemIndexAtCursor ~= currentPatternIndex - 1 then
                 currentPatternIndex = itemIndexAtCursor + 1
-                currentPattern = getPattern(drumTrack, currentPatternIndex - 1)
+                currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
             end
 
             reaper.ImGui_Separator(ctx)
@@ -211,7 +211,7 @@ local function loop()
 
             reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_ItemSpacing(), 2, 2) -- (x,y)
             
-            reaper.ImGui_Image(ctx, images.Channel_button_on.i, images.Channel_button_on.w, images.Channel_button_on.h)
+            drawTrackLabel(ctx, images.Channel_button_on, "Sequencer")
             for s=1, currentPattern.steps do
                 reaper.ImGui_SameLine(ctx)
                 local isCurrent = currentStep and s == currentStep
@@ -243,15 +243,7 @@ local function loop()
                 local sprite   = selected and images.Channel_button_on
                                             or  images.Channel_button_off
 
-                reaper.ImGui_Image(ctx, sprite.i, sprite.w, sprite.h)
-
-                local minX,minY = reaper.ImGui_GetItemRectMin(ctx)
-                local maxX,maxY = reaper.ImGui_GetItemRectMax(ctx)
-                local tw,th     = reaper.ImGui_CalcTextSize(ctx, trk.name)
-                local cx        = (minX + maxX - tw) * 0.5
-                local cy        = (minY + maxY - th) * 0.5
-                local dl        = reaper.ImGui_GetWindowDrawList(ctx)
-                reaper.ImGui_DrawList_AddText(dl, cx, cy, 0xFFFFFFFF, trk.name)
+                drawTrackLabel(ctx, sprite, trk.name)
                 reaper.ImGui_SameLine(ctx)
 
                 for s=1, currentPattern.steps do
@@ -288,7 +280,7 @@ local function loop()
             reaper.ImGui_Text(ctx, "Add a pattern to start")
             reaper.ImGui_SameLine(ctx)
             if reaper.ImGui_Button(ctx, "Add Pattern") then
-                createPattern(16)
+                createPattern(sequencerTrack, 16)
                 currentPatternIndex = 1
             end
         end

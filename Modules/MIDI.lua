@@ -1,37 +1,36 @@
-function getDrumbruteTrack()
+function getSequencerTrack()
     local track
     for i = 0, reaper.CountTracks(0) - 1 do
         local t = reaper.GetTrack(0, i)
         local _, name = reaper.GetTrackName(t, "")
-        if name == "MIDI-Drumbrute" then track = t break end
+        if name == "Sequencer" then track = t break end
     end
     if not track then                                   -- create it if missing
         local idx = reaper.CountTracks(0)
         reaper.InsertTrackAtIndex(idx, true)
         track = reaper.GetTrack(0, idx)
-        reaper.GetSetMediaTrackInfo_String(track, "P_NAME", "MIDI-Drumbrute", true)
+        reaper.GetSetMediaTrackInfo_String(track, "P_NAME", "Sequencer", true)
     end
     return track
 end
 
-function createPattern(steps)
-    local tr = getDrumbruteTrack()
+function createPattern(track, steps)
     local beatsInSec  = reaper.TimeMap2_beatsToTime(0, 1)
     local itemLength  = (steps / time_resolution) * beatsInSec
 
     -- place new pattern right after the last item (or at 0.0 if none)
     local lastPos = 0
-    for i = 0, reaper.CountTrackMediaItems(tr) - 1 do
-        local it  = reaper.GetTrackMediaItem(tr, i)
+    for i = 0, reaper.CountTrackMediaItems(track) - 1 do
+        local it  = reaper.GetTrackMediaItem(track, i)
         local pos = reaper.GetMediaItemInfo_Value(it, "D_POSITION")
         local len = reaper.GetMediaItemInfo_Value(it, "D_LENGTH")
         if pos + len > lastPos then lastPos = pos + len end
     end
 
-    local newItem = reaper.CreateNewMIDIItemInProj(tr, lastPos, lastPos + itemLength, false)
+    local newItem = reaper.CreateNewMIDIItemInProj(track, lastPos, lastPos + itemLength, false)
 
     local take     = reaper.GetMediaItemTake(newItem, 0)
-    local patNum   = reaper.CountTrackMediaItems(tr)          -- simple increment
+    local patNum   = reaper.CountTrackMediaItems(track)          -- simple increment
     reaper.GetSetMediaItemTakeInfo_String(take, "P_NAME", "Pattern " .. patNum, true)
 
     reaper.UpdateArrange()
