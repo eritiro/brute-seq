@@ -88,6 +88,79 @@ local loopPattern  = reaper.GetExtState("BruteSeq", "LoopPattern")  == "1"
 local loopSong     = reaper.GetExtState("BruteSeq", "LoopSong")     == "1"
 local ripple       = reaper.GetExtState("BruteSeq", "Ripple")       == "1"
 
+local function processPattern(currentPattern)
+    -- Navigation Step Bar
+    local currentStepTotal = getCurrentStep(currentPattern.item)
+    local currentStep = currentStepTotal and (currentStepTotal % currentPattern.steps) + 1 or -1 
+    local currentTime = currentStepTotal and (currentStepTotal // currentPattern.steps) + 1 or -1
+
+    reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_ItemSpacing(), 2, 2) -- (x,y)
+    
+    drawTrackLabel(ctx, images.Channel_button_on, "Sequencer")
+    for s=1, currentPattern.steps do
+        reaper.ImGui_SameLine(ctx)
+        local isCurrent = currentStep and s == currentStep
+        drawStepCursor(isCurrent)
+        
+        if reaper.ImGui_IsItemClicked(ctx) then
+            jumpToStep(currentPattern.item, s - 1)
+        end
+    end
+
+    if currentPattern.times > 1 then
+        drawTimesSeparator()
+        for s=1, currentPattern.times do
+            reaper.ImGui_SameLine(ctx)
+            local isCurrent = currentTime and s == currentTime
+            drawStepCursor(isCurrent)
+
+            if reaper.ImGui_IsItemClicked(ctx) then
+                jumpToStep(currentPattern.item, (s - 1) * currentPattern.steps)
+            end
+        end    
+    end
+    
+    -- Step Grid
+
+    for ti,trk in ipairs(tracks) do
+        local id       = '##ch' .. ti
+        local selected = false
+        local sprite   = selected and images.Channel_button_on
+                                    or  images.Channel_button_off
+
+        drawTrackLabel(ctx, sprite, trk.name)
+        reaper.ImGui_SameLine(ctx)
+
+        for s=1, currentPattern.steps do
+            local stepVelocity = getStepVelocity(currentPattern.item, s, trk.note)
+            local active = stepVelocity ~= nil
+            local odd    = ((s-1)//4)%2==0
+            local accent = active and (stepVelocity > accentThreshold) 
+
+            drawStepButton(active, odd, accent)
+
+            if s < currentPattern.steps then reaper.ImGui_SameLine(ctx) end
+
+            local clicked = reaper.ImGui_IsItemClicked(ctx)
+            if clicked then                    
+                local shift = reaper.ImGui_IsKeyDown(ctx, reaper.ImGui_Key_LeftShift())
+
+                local shouldDelete = active
+                local shouldCreate = not active or (shift ~= accent)
+                
+                if shouldDelete then
+                    deleteMidiNote(currentPattern.item, s, trk.note)
+                end
+                if shouldCreate then
+                    local newVelocity = shift and accentVelocity or normalVelocity
+                    addMidiNote(currentPattern.item, s, trk.note, newVelocity)
+                end
+            end
+        end
+    end
+    reaper.ImGui_PopStyleVar(ctx)
+end    
+
 local function loop()
     passThroughShortcuts(ctx)
     reaper.ImGui_SetNextWindowSize(ctx,900,420,reaper.ImGui_Cond_FirstUseEver())
@@ -204,76 +277,12 @@ local function loop()
 
             reaper.ImGui_Separator(ctx)
 
-            -- Navigation Step Bar
-            local currentStepTotal = getCurrentStep(currentPattern.item)
-            local currentStep = currentStepTotal and (currentStepTotal % currentPattern.steps) + 1 or -1 
-            local currentTime = currentStepTotal and (currentStepTotal // currentPattern.steps) + 1 or -1
-
-            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_ItemSpacing(), 2, 2) -- (x,y)
-            
-            drawTrackLabel(ctx, images.Channel_button_on, "Sequencer")
-            for s=1, currentPattern.steps do
-                reaper.ImGui_SameLine(ctx)
-                local isCurrent = currentStep and s == currentStep
-                drawStepCursor(isCurrent)
-                
-                if reaper.ImGui_IsItemClicked(ctx) then
-                    jumpToStep(currentPattern.item, s - 1)
-                end
+            if isMidi(currentPattern.item) then
+                processPattern(currentPattern)
+            else
+                reaper.ImGui_AlignTextToFramePadding(ctx)
+                reaper.ImGui_Text(ctx, "Non MIDI items are not supported in the sequencer track")                
             end
-
-            if currentPattern.times > 1 then
-                drawTimesSeparator()
-                for s=1, currentPattern.times do
-                    reaper.ImGui_SameLine(ctx)
-                    local isCurrent = currentTime and s == currentTime
-                    drawStepCursor(isCurrent)
-
-                    if reaper.ImGui_IsItemClicked(ctx) then
-                        jumpToStep(currentPattern.item, (s - 1) * currentPattern.steps)
-                    end
-                end    
-            end
-            
-            -- Step Grid
-
-            for ti,trk in ipairs(tracks) do
-                local id       = '##ch' .. ti
-                local selected = false
-                local sprite   = selected and images.Channel_button_on
-                                            or  images.Channel_button_off
-
-                drawTrackLabel(ctx, sprite, trk.name)
-                reaper.ImGui_SameLine(ctx)
-
-                for s=1, currentPattern.steps do
-                    local stepVelocity = getStepVelocity(currentPattern.item, s, trk.note)
-                    local active = stepVelocity ~= nil
-                    local odd    = ((s-1)//4)%2==0
-                    local accent = active and (stepVelocity > accentThreshold) 
-
-                    drawStepButton(active, odd, accent)
-
-                    if s < currentPattern.steps then reaper.ImGui_SameLine(ctx) end
-
-                    local clicked = reaper.ImGui_IsItemClicked(ctx)
-                    if clicked then                    
-                        local shift = reaper.ImGui_IsKeyDown(ctx, reaper.ImGui_Key_LeftShift())
-
-                        local shouldDelete = active
-                        local shouldCreate = not active or (shift ~= accent)
-                        
-                        if shouldDelete then
-                            deleteMidiNote(currentPattern.item, s, trk.note)
-                        end
-                        if shouldCreate then
-                            local newVelocity = shift and accentVelocity or normalVelocity
-                            addMidiNote(currentPattern.item, s, trk.note, newVelocity)
-                        end
-                    end
-                end
-            end
-            reaper.ImGui_PopStyleVar(ctx)
         else
             reaper.ImGui_SameLine(ctx) 
             reaper.ImGui_AlignTextToFramePadding(ctx)

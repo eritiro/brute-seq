@@ -103,8 +103,7 @@ function rippleFollowingItems(track, item, originalLength)
 end
 
 function getStepVelocity(item, stepIdx, pitch)
-    if not item then return false end
-    local take = reaper.GetActiveTake(item);  if not take or not reaper.TakeIsMIDI(take) then return false end
+    local take = reaper.GetActiveTake(item)  
 
     local itemPos   = reaper.GetMediaItemInfo_Value(item,'D_POSITION')
     local secPerBt  = reaper.TimeMap2_beatsToTime(0,1)
@@ -126,9 +125,7 @@ function getStepVelocity(item, stepIdx, pitch)
 end
 
 function addMidiNote(item, stepIdx, note, velocity)
-    if not item then return end
-    local take = reaper.GetActiveTake(item); if not take then return end
-    if not reaper.TakeIsMIDI(take) then return end
+    local take = reaper.GetActiveTake(item)
 
     local itemPos   = reaper.GetMediaItemInfo_Value(item, 'D_POSITION')
     local secPerBt  = reaper.TimeMap2_beatsToTime(0, 1)
@@ -144,9 +141,7 @@ function addMidiNote(item, stepIdx, note, velocity)
 end
 
 function deleteMidiNote(item, stepIdx, note)
-    if not item then return end
-    local take = reaper.GetActiveTake(item); if not take then return end
-    if not reaper.TakeIsMIDI(take) then return end
+    local take = reaper.GetActiveTake(item)
 
     local itemPos   = reaper.GetMediaItemInfo_Value(item, 'D_POSITION')
     local secPerBt  = reaper.TimeMap2_beatsToTime(0, 1)
@@ -165,4 +160,9 @@ function deleteMidiNote(item, stepIdx, note)
         end
     end
     reaper.MIDI_Sort(take)
+end
+
+function isMidi(item)
+    take = reaper.GetActiveTake(item)
+    return take and reaper.TakeIsMIDI(take)
 end
