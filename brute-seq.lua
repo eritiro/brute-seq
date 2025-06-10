@@ -102,6 +102,14 @@ local function loop()
             reaper.ImGui_SameLine(ctx)
             changedPattern, currentPatternIndex = drawSlider(ctx, '##Pattern', currentPatternIndex, 1, patternCount, 140)
             reaper.ImGui_SameLine(ctx)
+            
+            local y = reaper.ImGui_GetCursorPosY(ctx)
+            reaper.ImGui_SetCursorPosY(ctx, y + 1)
+            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 2)
+            addedPattern = reaper.ImGui_Button(ctx, "+")
+            reaper.ImGui_PopStyleVar(ctx)
+
+            reaper.ImGui_SameLine(ctx)
             reaper.ImGui_Text(ctx, 'Steps:')
             reaper.ImGui_SameLine(ctx)
             changedSteps, currentPattern.steps = drawSlider(ctx, '##Length', currentPattern.steps, 1, 64, 140, 4, 4)
@@ -110,11 +118,8 @@ local function loop()
             reaper.ImGui_SameLine(ctx)
             changedTimes, currentPattern.times = drawSlider(ctx, '##Times', currentPattern.times, 1, 32, 140, 4, 4)
 
-            reaper.ImGui_SameLine(ctx)
-            addedPattern = reaper.ImGui_Button(ctx, "Add Pattern")
-
             -- draw options
-            reaper.ImGui_SameLine(ctx)
+            SameLineAutoWrap(ctx, 1000)
             changedFollowOption, followCursor = reaper.ImGui_Checkbox(ctx, "Follow", followCursor)
             reaper.ImGui_SameLine(ctx)
             changedLoopPatternOption, loopPattern = reaper.ImGui_Checkbox(ctx, "Loop pattern", loopPattern)

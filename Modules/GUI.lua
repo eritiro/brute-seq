@@ -92,3 +92,12 @@ function drawTimesSeparator()
     reaper.ImGui_Text(ctx, '-')
     reaper.ImGui_SameLine(ctx)
 end
+
+function SameLineAutoWrap(ctx, widgetWidth, spacing)
+    spacing = spacing or 0
+    local avail_w, avail_h = reaper.ImGui_GetContentRegionAvail(ctx)
+    if avail_w < widgetWidth + spacing then
+        reaper.ImGui_NewLine(ctx)
+    end
+    reaper.ImGui_SameLine(ctx, spacing)
+end
