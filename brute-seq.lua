@@ -35,6 +35,15 @@ local reaper = reaper
 script_path = debug.getinfo(1, "S").source:match [[^@?(.*[\/])[^\/]-$]]
 local modules_path = script_path .. 'Modules/'
 
+-- check dependencies 
+
+if not reaper.APIExists('ImGui_GetVersion') then
+    local text = 'This script requires the ReaImGui extension to run. You can install it through ReaPack.'
+    reaper.ShowMessageBox(text, 'Error - Missing Dependency', 0)
+    return
+end
+
+
 -- requires script_path
 dofile(script_path .. 'Modules/GUI.lua')
 -- requires time_resolution

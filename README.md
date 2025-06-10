@@ -37,8 +37,6 @@ A lightweight **ReaScript + ReaImGui** tool that turns REAPER into a pattern�
 
 1. **Dependencies**  
    * REAPER 7+ (tested on v7.39)  
-   * [SWS Extension](https://www.sws-extension.org/)  
-   * [js_ReaScriptAPI](https://forum.cockos.com/showthread.php?t=212174)  
    * [ReaImGui ≥ 0.9.3.3](https://github.com/cfillion/reaimgui)
 
 
