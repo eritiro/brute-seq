@@ -3,7 +3,10 @@ function getSequencerTrack()
     for i = 0, reaper.CountTracks(0) - 1 do
         local t = reaper.GetTrack(0, i)
         local _, name = reaper.GetTrackName(t, "")
-        if name == "Sequencer" then track = t break end
+        if name:lower():match("sequencer$") then
+            track = t
+            break
+        end
     end
     if not track then                                   -- create it if missing
         local idx = reaper.CountTracks(0)
@@ -14,7 +17,7 @@ function getSequencerTrack()
     return track
 end
 
-function createPattern(track, steps)
+function createItem(track, steps)
     local beatsInSec  = reaper.TimeMap2_beatsToTime(0, 1)
     local itemLength  = (steps / time_resolution) * beatsInSec
 
@@ -34,6 +37,13 @@ function createPattern(track, steps)
     reaper.GetSetMediaItemTakeInfo_String(take, "P_NAME", "Pattern " .. patNum, true)
 
     reaper.UpdateArrange()
+
+    return newItem
+end
+
+function removeItem(item)
+    reaper.DeleteTrackMediaItem(reaper.GetMediaItemTrack(item), item)
+    reaper.UpdateArrange()    
 end
 
 function getItemSteps(item)

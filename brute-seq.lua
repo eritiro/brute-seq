@@ -88,6 +88,37 @@ local loopPattern  = reaper.GetExtState("BruteSeq", "LoopPattern")  == "1"
 local loopSong     = reaper.GetExtState("BruteSeq", "LoopSong")     == "1"
 local ripple       = reaper.GetExtState("BruteSeq", "Ripple")       == "1"
 
+local currentPatternIndex = 1
+
+local function updateCurrentPatternIndex()
+    sequencerTrack = getSequencerTrack()
+    local patternCount   = reaper.CountTrackMediaItems(sequencerTrack)
+    local itemIndexAtCursor = getItemIndexAtCursor(sequencerTrack)
+    if followCursor and itemIndexAtCursor and itemIndexAtCursor ~= currentPatternIndex - 1 then
+        currentPatternIndex = itemIndexAtCursor + 1
+    else
+        currentPatternIndex = math.min(currentPatternIndex, patternCount);        
+    end
+end
+
+local function updateCursor(item, stepIndex)
+    if followCursor then
+        jumpToStep(item, stepIndex)
+    end
+end
+
+local function updateTimeSelection()
+    local sequencerTrack = getSequencerTrack()
+    if loopPattern then
+        local currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
+        if currentPattern then
+            setTimeSelectionFromItem(currentPattern.item)
+        end
+    elseif loopSong then
+        setTimeSelectionFromTrack(sequencerTrack)
+    end
+end
+
 local function processPattern(currentPattern)
     -- Navigation Step Bar
     local currentStepTotal = getCurrentStep(currentPattern.item)
@@ -172,9 +203,10 @@ local function loop()
         local sequencerTrack      = getSequencerTrack()
         local patternCount   = reaper.CountTrackMediaItems(sequencerTrack)
         
-        currentPatternIndex = math.min(currentPatternIndex or 1, patternCount);
-        local currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
+        updateCurrentPatternIndex()
 
+        local currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
+        local command = nil
         if currentPattern then
             -- top bar
             reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 4)
@@ -189,10 +221,17 @@ local function loop()
             local y = reaper.ImGui_GetCursorPosY(ctx)
             reaper.ImGui_SetCursorPosY(ctx, y + 1)
             reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 2)
+            removedPattern = reaper.ImGui_Button(ctx, "-")
+            reaper.ImGui_PopStyleVar(ctx)
+            reaper.ImGui_SameLine(ctx)
+
+            local y = reaper.ImGui_GetCursorPosY(ctx)
+            reaper.ImGui_SetCursorPosY(ctx, y + 1)
+            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 2)
             addedPattern = reaper.ImGui_Button(ctx, "+")
             reaper.ImGui_PopStyleVar(ctx)
-
             reaper.ImGui_SameLine(ctx)
+
             reaper.ImGui_Text(ctx, 'Steps:')
             reaper.ImGui_SameLine(ctx)
             changedSteps, currentPattern.steps = drawSlider(ctx, '##Length', currentPattern.steps, 1, 64, 140, 4, 4)
@@ -212,41 +251,46 @@ local function loop()
             changedRippleOption, ripple = reaper.ImGui_Checkbox(ctx, "Ripple", ripple)
 
             reaper.ImGui_PopStyleVar(ctx, 1)
+            reaper.ImGui_Separator(ctx)
 
-            -- ensure loop consistency
-            loopSong = loopSong and not changedLoopPatternOption
-            loopPattern = loopPattern and not changedLoopSongOption
-
-
-            if changedFollowOption then
-                reaper.SetExtState("BruteSeq", "FollowCursor", followCursor and "1" or "0", true)
+            if isMidi(currentPattern.item) then
+                processPattern(currentPattern)
+            else
+                reaper.ImGui_AlignTextToFramePadding(ctx)
+                reaper.ImGui_Text(ctx, "Non MIDI items are not supported in the sequencer track")                
             end
 
-            if changedLoopPatternOption or changedLoopSongOption then
+            -- Update logic
+
+            -- update options in reaper extended state
+            if changedFollowOption or changedLoopPatternOption or changedLoopSongOption or changedRippleOption then
+                -- ensure loop consistency
+                loopSong = loopSong and not changedLoopPatternOption
+                loopPattern = loopPattern and not changedLoopSongOption
+                reaper.SetExtState("BruteSeq", "FollowCursor", followCursor and "1" or "0", true)
                 reaper.SetExtState("BruteSeq", "LoopPattern", loopPattern and "1" or "0", true)
                 reaper.SetExtState("BruteSeq", "LoopSong", loopSong and "1" or "0", true)
-            end
-
-            if changedRippleOption then
                 reaper.SetExtState("BruteSeq", "Ripple", ripple and "1" or "0", true)
-            end
-
-            if addedPattern then
-                createPattern(sequencerTrack, currentPattern.steps > 0 and currentPattern.steps or 16)
-                changedPattern = true
-                if followCursor then
-                    currentPatternIndex = patternCount + 1
+                if changedLoopPatternOption or changedLoopSongOption then
+                    updateTimeSelection()
                 end
-            end
-
-            -- Jump to step
-            if changedPattern and followCursor then
+            -- Delete pattern
+            elseif removedPattern then
+                removeItem(currentPattern.item)
+                updateCurrentPatternIndex()
                 currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
-                jumpToStep(currentPattern.item, 0)
-            end
-
+                if currentPattern then
+                    updateCursor(currentPattern.item, 0)
+                end
+                updateTimeSelection()
+            -- Add pattern
+            elseif addedPattern then
+                newItem = createItem(sequencerTrack, currentPattern.steps > 0 and currentPattern.steps or 16)
+                currentPatternIndex = patternCount + 1
+                updateCursor(newItem, 0)
+                updateTimeSelection()
             -- Resize pattern
-            if changedSteps or changedTimes then
+            elseif changedSteps or changedTimes then
                 reaper.Undo_BeginBlock()
                 local originalLength = reaper.GetMediaItemInfo_Value(currentPattern.item, 'D_LENGTH')
                 if changedSteps then
@@ -256,41 +300,20 @@ local function loop()
                 if ripple then
                     rippleFollowingItems(sequencerTrack, currentPattern.item, originalLength)
                 end
+                updateTimeSelection()
                 reaper.Undo_EndBlock('Resize pattern',-1)
-            end
-
-            -- Change time selection
-            if changedPattern or changedLoopPatternOption or changedLoopSongOption or changedSteps or changedTimes then
+            elseif changedPattern then
                 currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
-                if loopPattern then
-                    setTimeSelectionFromItem(currentPattern.item)
-                elseif loopSong then
-                    setTimeSelectionFromTrack(sequencerTrack)
-                end
+                updateCursor(currentPattern.item, 0)
+                updateTimeSelection()
             end
-
-            -- Follow cursor
-            local itemIndexAtCursor = getItemIndexAtCursor(sequencerTrack)
-            if followCursor and itemIndexAtCursor and itemIndexAtCursor ~= currentPatternIndex - 1 then
-                currentPatternIndex = itemIndexAtCursor + 1
-                currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
-            end
-
-            reaper.ImGui_Separator(ctx)
-
-            if isMidi(currentPattern.item) then
-                processPattern(currentPattern)
-            else
-                reaper.ImGui_AlignTextToFramePadding(ctx)
-                reaper.ImGui_Text(ctx, "Non MIDI items are not supported in the sequencer track")                
-            end
-        else
+        else -- if currentPattern 
             reaper.ImGui_SameLine(ctx) 
             reaper.ImGui_AlignTextToFramePadding(ctx)
             reaper.ImGui_Text(ctx, "Add a pattern to start")
             reaper.ImGui_SameLine(ctx)
             if reaper.ImGui_Button(ctx, "Add Pattern") then
-                createPattern(sequencerTrack, 16)
+                createItem(sequencerTrack, 16)
                 currentPatternIndex = 1
             end
         end
