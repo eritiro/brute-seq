@@ -164,7 +164,8 @@ end
 local function loop()
     passThroughShortcuts(ctx)
     reaper.ImGui_SetNextWindowSize(ctx,900,420,reaper.ImGui_Cond_FirstUseEver())
-    if reaper.ImGui_Begin(ctx,'brute-seq',true) then
+    visible, open = reaper.ImGui_Begin(ctx,'brute-seq',true)
+    if visible then
         reaper.ImGui_PushFont(ctx,font)
         reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
 
@@ -297,6 +298,8 @@ local function loop()
         reaper.ImGui_PopFont(ctx)
     end
     reaper.ImGui_End(ctx)
-    reaper.defer(loop)
+    if open then
+        reaper.defer(loop)
+    end
 end
 loop()
