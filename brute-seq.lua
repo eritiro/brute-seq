@@ -194,10 +194,10 @@ end
 
 local function loop()
     passThroughShortcuts(ctx)
+    reaper.ImGui_PushFont(ctx,font)
     reaper.ImGui_SetNextWindowSize(ctx,900,420,reaper.ImGui_Cond_FirstUseEver())
-    visible, open = reaper.ImGui_Begin(ctx,'brute-seq',true)
+    visible, open = reaper.ImGui_Begin(ctx,'BRUTE SEQ',true)
     if visible then
-        reaper.ImGui_PushFont(ctx,font)
         reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
 
         local sequencerTrack      = getSequencerTrack()
@@ -209,8 +209,8 @@ local function loop()
         local command = nil
         if currentPattern then
             -- top bar
-            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 4)
-            
+            pushToolbarStyles(ctx)
+
             reaper.ImGui_SameLine(ctx) 
             reaper.ImGui_AlignTextToFramePadding(ctx)
             reaper.ImGui_Text(ctx, 'Pattern:')
@@ -220,7 +220,7 @@ local function loop()
             
             local y = reaper.ImGui_GetCursorPosY(ctx)
             reaper.ImGui_SetCursorPosY(ctx, y + 1)
-            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 2)
+            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 5, 2)
             removedPattern = reaper.ImGui_Button(ctx, "-")
             reaper.ImGui_PopStyleVar(ctx)
             reaper.ImGui_SameLine(ctx)
@@ -250,7 +250,7 @@ local function loop()
             reaper.ImGui_SameLine(ctx)
             changedRippleOption, ripple = reaper.ImGui_Checkbox(ctx, "Ripple", ripple)
 
-            reaper.ImGui_PopStyleVar(ctx, 1)
+            popToolbarStyles(ctx)
             reaper.ImGui_Separator(ctx)
 
             if isMidi(currentPattern.item) then
@@ -318,9 +318,9 @@ local function loop()
             end
         end
         reaper.ImGui_PopStyleColor(ctx)
-        reaper.ImGui_PopFont(ctx)
     end
     reaper.ImGui_End(ctx)
+    reaper.ImGui_PopFont(ctx)
     if open then
         reaper.defer(loop)
     end

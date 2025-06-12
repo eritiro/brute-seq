@@ -10,7 +10,7 @@ local images_path = script_path .. 'Images/'
 -- Load fonts
 -----------------------------------------------------------------------
 
-local font = reaper.ImGui_CreateFont(fonts_path .. 'Inter.ttc', fontSize)
+font = reaper.ImGui_CreateFont(fonts_path .. 'Inter.ttc', fontSize)
 local fontBigger = reaper.ImGui_CreateFont(fonts_path .. 'Inter.ttc', fontSize + 4)
 local fontSmall = reaper.ImGui_CreateFont(fonts_path .. 'Inter.ttc', fontSize - 1)
 reaper.ImGui_Attach(ctx, font)
@@ -56,6 +56,26 @@ local function stepSprite(on,odd, accent)
 end
 local cellW,cellH = images.Step_odd_off.w, images.Step_odd_off.h
 
+local buttonColor = 0x2f2f34ff
+local activeButtonColor = 0x576065ff
+local slideBackgroundColor = 0x060607ff
+
+function pushToolbarStyles(ctx)
+    reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 4)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SliderGrab(), buttonColor)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SliderGrabActive(), activeButtonColor)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBg(), slideBackgroundColor)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBgHovered(), slideBackgroundColor)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBgActive(), slideBackgroundColor)
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), buttonColor) 
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), buttonColor) 
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), activeButtonColor)
+end
+
+function popToolbarStyles(ctx)
+    reaper.ImGui_PopStyleColor(ctx, 8)
+    reaper.ImGui_PopStyleVar(ctx, 1)
+end
 
 function drawSlider(ctx, label, value, minVal, maxVal,
     width)
@@ -66,6 +86,7 @@ function drawSlider(ctx, label, value, minVal, maxVal,
     
     reaper.ImGui_PushItemWidth(ctx, width)
     reaper.ImGui_PushFont(ctx, fontSmall)
+
 
     local changed, newVal = reaper.ImGui_SliderInt(ctx, label, value, minVal, maxVal)
 
