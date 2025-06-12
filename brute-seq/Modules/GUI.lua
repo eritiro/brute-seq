@@ -1,3 +1,5 @@
+-- @noindex
+
 -- config
 local fontSize = 12
 

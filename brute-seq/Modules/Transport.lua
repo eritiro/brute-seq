@@ -1,3 +1,5 @@
+-- @noindex
+
 function setTimeSelectionFromItem(item)
     local startPos = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
     local length   = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")

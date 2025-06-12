@@ -3,7 +3,8 @@
 -- @license GPL v3
 -- @version 0.0.1
 -- @provides
---   Modules/*.lua
+--   [main] brute-seq.lua
+--   [nomain] Modules/*.lua
 --   Images/*.png
 --   Fonts/*.ttc
 

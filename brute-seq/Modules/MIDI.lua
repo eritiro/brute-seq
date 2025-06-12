@@ -1,3 +1,5 @@
+-- @noindex
+
 function getSequencerTrack()
     local track
     for i = 0, reaper.CountTracks(0) - 1 do
