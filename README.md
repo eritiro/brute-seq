@@ -4,7 +4,7 @@ A lightweight **ReaScript + ReaImGui** tool that turns REAPER into a pattern�
 
 **Built on** and inspired by <https://github.com/Arthur-McArthur/Arthur-McArthur-ReaScripts/tree/master/McSequencer>
 
-![brute-seq reaper](https://github.com/user-attachments/assets/b72a3283-256b-4210-b44a-c216b2623573)
+![brute-seq](https://github.com/user-attachments/assets/06172d5b-8f90-4977-8761-9cd5ad8875ee)
 
 ## Features
 
