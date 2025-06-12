@@ -36,21 +36,29 @@ A lightweight **ReaScript + ReaImGui** tool that turns REAPER into a pattern�
 
 ## Installation
 
-1. **Dependencies**  
+**Dependencies**  
    * REAPER 7+ (tested on v7.39)  
-   * [ReaImGui ≥ 0.9.3.3](https://github.com/cfillion/reaimgui)
+   * ReaPack (Optional but covenient) (https://reapack.com/)
+   * [ReaImGui ≥ 0.9.3.3](https://github.com/cfillion/reaimgui) 
 
+**Pre-requisites**
+
+1. Install ReaPack if you don't have it already (https://reapack.com/)
+2. Install ReaImGui (In Reaper, go to Extensions -> ReaPack -> Browse Packages. Search for ReaImGui and install it. You will need to restart Reaper
+
+**Instalation**
+
+1. Extensions -> ReaPack -> Import repositories: Add https://github.com/eritiro/brute-seq/raw/main/index.xml
+2. Extensions -> ReaPack -> Browse packages: Install `brute-seq`
 
 ## Quick‑start
 
-1. Add (or let the script create) a track named **`MIDI-Drumbrute`**.  
-2. Arm the track and select the desired MIDI output.  
-3. Run **brute-seq**.  
-4. Click **Add Pattern** → an empty 16‑step MIDI item appears.  
-5. Toggle hits on the grid; drag across steps to paint them.  
-6. Use **Steps** and **Times** sliders to shape the pattern. Items that follow are auto‑shifted to avoid overlaps.  
-7. (Optional) Tick **Jump on Pattern change** so the play‑cursor follows when you move the *Pattern* slider.
-
+1. Actions -> Show Actions List -> brute-seq
+2. It will create a track named **`Sequencer`**. You can rename it but it has to end with Sequencer.
+3. Click **Add Pattern** → an empty 16‑step MIDI item appears.  
+4. Toggle hits on the grid; drag across steps to paint them.  
+5. Use **Steps** and **Times** sliders to shape the pattern. Items that follow are auto‑shifted to avoid overlaps.  
+6. (Optional) Tick **Follow** so the play‑cursor follows when you move the *Pattern* slider.
 
 ## Customising note map
 
