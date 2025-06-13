@@ -185,7 +185,6 @@ end
 
 
 -- UI state -----------------------------------------------------------
-local showPopup = false
 local editText
 
 local function showLanesConfigPopup()
@@ -217,10 +216,25 @@ local function showLanesConfigPopup()
     return visibleOK
 end
 
+local function addMenuBar()
+    local openLanesPopup
+    if reaper.ImGui_BeginMenuBar(ctx) then
+        if reaper.ImGui_BeginMenu(ctx, "Options") then
+            openLanesPopup = reaper.ImGui_MenuItem(ctx, "Configure track lanes")
+            reaper.ImGui_EndMenu(ctx)
+        end
+        reaper.ImGui_EndMenuBar(ctx)
+    end
+    if openLanesPopup then
+        editText = lanesToString(loadLanes(getSequencerTrack()))
+        reaper.ImGui_OpenPopup(ctx, "Edit Lanes")
+    end
+end
+
 local function loop()
     reaper.ImGui_PushFont(ctx,font)
     reaper.ImGui_SetNextWindowSize(ctx,900,420,reaper.ImGui_Cond_FirstUseEver())
-    visible, open = reaper.ImGui_Begin(ctx,'BRUTE SEQ',true)
+    visible, open = reaper.ImGui_Begin(ctx,'BRUTE SEQ',true, reaper.ImGui_WindowFlags_MenuBar())
     if visible then
 
         local sequencerTrack      = getSequencerTrack()
@@ -232,7 +246,10 @@ local function loop()
         local command = nil
 
         reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
-        if currentPattern then
+        if currentPattern then            
+
+            addMenuBar()
+
             -- top bar
             pushToolbarStyles(ctx)
 
@@ -265,8 +282,7 @@ local function loop()
             reaper.ImGui_SameLine(ctx)
             changedRippleOption, ripple = reaper.ImGui_Checkbox(ctx, "Ripple", ripple)
             reaper.ImGui_SameLine(ctx)
-            local configLanes = reaper.ImGui_Button(ctx, "Config")
-
+    
             popToolbarStyles(ctx)
             reaper.ImGui_Separator(ctx)
 
@@ -325,10 +341,6 @@ local function loop()
                 nextPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
                 updateCursor(currentPattern.item, nextPattern.item)
                 updateTimeSelection()
-            elseif configLanes then
-                showPopup = true
-                editText = lanesToString(lanes)
-                reaper.ImGui_OpenPopup(ctx, "Edit Lanes")
             end
         else -- if currentPattern 
             reaper.ImGui_SameLine(ctx) 
