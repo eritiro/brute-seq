@@ -1,7 +1,7 @@
 -- @description brute-seq Drumbrute Impact sequencer for Reaper
 -- @author eritiro
 -- @license GPL v3
--- @version 0.0.2
+-- @version 0.0.3
 -- @provides
 --   [main] brute-seq.lua
 --   [nomain] Modules/*.lua
@@ -10,18 +10,6 @@
 
 -- General configuration
 time_resolution = 4         -- 4 currentPattern.steps per beat (adjust if you changed it)
-local tracks = {
-    { name = "Kick",        note = 36 },  -- C2
-    { name = "Snare 1",     note = 37 },
-    { name = "Snare 2",     note = 38 },
-    { name = "Tom High",    note = 39 },
-    { name = "Tom Low",     note = 40 },
-    { name = "Cymbal",      note = 41 },
-    { name = "Cowbell",     note = 42 },
-    { name = "Closed Hat",  note = 43 },
-    { name = "Open Hat",    note = 44 },
-    { name = "FM Drum",     note = 45 },
-}
 
 -- velocity used to add regular notes
 local normalVelocity = 100
@@ -49,6 +37,8 @@ end
 dofile(script_path .. 'Modules/GUI.lua')
 -- requires time_resolution
 dofile(script_path .. 'Modules/Transport.lua')
+
+dofile(script_path .. 'Modules/Storage.lua')
 
 dofile(script_path .. 'Modules/MIDI.lua')
 
@@ -120,7 +110,7 @@ local function updateTimeSelection()
     end
 end
 
-local function processPattern(currentPattern)
+local function processPattern(currentPattern, lanes)
     -- Navigation Step Bar
     local currentStepTotal = getCurrentStep(currentPattern.item)
     local currentStep = currentStepTotal and (currentStepTotal % currentPattern.steps) + 1 or -1 
@@ -154,7 +144,7 @@ local function processPattern(currentPattern)
     
     -- Step Grid
 
-    for ti,trk in ipairs(tracks) do
+    for ti,trk in ipairs(lanes) do
         local id       = '##ch' .. ti
         local selected = false
         local sprite   = selected and images.Channel_button_on
@@ -193,21 +183,55 @@ local function processPattern(currentPattern)
     reaper.ImGui_PopStyleVar(ctx)
 end    
 
+
+-- UI state -----------------------------------------------------------
+local showPopup = false
+local editText
+
+local function showLanesConfigPopup()
+    local visibleOK = reaper.ImGui_BeginPopupModal(ctx, "Edit Lanes", nil,
+                                                reaper.ImGui_WindowFlags_AlwaysAutoResize())
+    if visibleOK then
+        reaper.ImGui_Text(ctx, "Edit the configuration describing the track lanes:")
+        changed, editText = reaper.ImGui_InputTextMultiline(ctx, "##lanesSrc", editText,
+                                        480, 260, reaper.ImGui_InputTextFlags_AllowTabInput())
+
+        local valid = validateTextAsLanes(editText)
+        if not valid then
+            reaper.ImGui_TextColored(ctx, 0xFF4444FF, "Invalid format!")
+        end
+
+        if reaper.ImGui_Button(ctx, "OK") then
+            if valid then
+                lanes = stringToLanes(editText)
+                storeLanes(sequencerTrack, lanes)
+                reaper.ImGui_CloseCurrentPopup(ctx)
+            end
+        end
+        reaper.ImGui_SameLine(ctx)
+        if reaper.ImGui_Button(ctx, "Cancel") then
+            reaper.ImGui_CloseCurrentPopup(ctx)
+        end
+        reaper.ImGui_EndPopup(ctx)
+    end
+    return visibleOK
+end
+
 local function loop()
-    passThroughShortcuts(ctx)
     reaper.ImGui_PushFont(ctx,font)
     reaper.ImGui_SetNextWindowSize(ctx,900,420,reaper.ImGui_Cond_FirstUseEver())
     visible, open = reaper.ImGui_Begin(ctx,'BRUTE SEQ',true)
     if visible then
-        reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
 
         local sequencerTrack      = getSequencerTrack()
-        local patternCount   = reaper.CountTrackMediaItems(sequencerTrack)
-        
-        updateCurrentPatternIndex()
+        local lanes = loadLanes(sequencerTrack)
 
+        local patternCount   = reaper.CountTrackMediaItems(sequencerTrack)
+        updateCurrentPatternIndex()
         local currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
         local command = nil
+
+        reaper.ImGui_PushStyleColor(ctx,reaper.ImGui_Col_WindowBg(),0x222222FF)
         if currentPattern then
             -- top bar
             pushToolbarStyles(ctx)
@@ -240,12 +264,14 @@ local function loop()
             changedLoopSongOption, loopSong = reaper.ImGui_Checkbox(ctx, "Loop song", loopSong)
             reaper.ImGui_SameLine(ctx)
             changedRippleOption, ripple = reaper.ImGui_Checkbox(ctx, "Ripple", ripple)
+            reaper.ImGui_SameLine(ctx)
+            local configLanes = reaper.ImGui_Button(ctx, "Config")
 
             popToolbarStyles(ctx)
             reaper.ImGui_Separator(ctx)
 
             if isMidi(currentPattern.item) then
-                processPattern(currentPattern)
+                processPattern(currentPattern, lanes)
             else
                 reaper.ImGui_AlignTextToFramePadding(ctx)
                 reaper.ImGui_Text(ctx, "Non MIDI items are not supported in the sequencer track")                
@@ -299,6 +325,10 @@ local function loop()
                 nextPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
                 updateCursor(currentPattern.item, nextPattern.item)
                 updateTimeSelection()
+            elseif configLanes then
+                showPopup = true
+                editText = lanesToString(lanes)
+                reaper.ImGui_OpenPopup(ctx, "Edit Lanes")
             end
         else -- if currentPattern 
             reaper.ImGui_SameLine(ctx) 
@@ -311,6 +341,10 @@ local function loop()
             end
         end
         reaper.ImGui_PopStyleColor(ctx)
+    end
+    local popupActive = showLanesConfigPopup()
+    if not popupActive then
+        passThroughShortcuts(ctx)
     end
     reaper.ImGui_End(ctx)
     reaper.ImGui_PopFont(ctx)
