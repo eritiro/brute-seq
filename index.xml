@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="brute-seq" commit="ef6d482d4bd318c5eb4c61511dbe5a8dfe55312c">
+<index version="1" name="brute-seq" commit="22a82c275041a5f779e02bb36e06bfd8e9b85d2b">
   <category name="brute-seq">
     <reapack name="brute-seq.lua" type="script" desc="brute-seq Drumbrute Impact sequencer for Reaper">
       <version name="0.0.1" author="eritiro" time="2025-06-12T13:27:04Z">
@@ -35,6 +35,25 @@
         <source file="Images/Step_odd_off.png">https://github.com/eritiro/brute-seq/raw/ef6d482d4bd318c5eb4c61511dbe5a8dfe55312c/brute-seq/Images/Step_odd_off.png</source>
         <source file="Images/Step_odd_on.png">https://github.com/eritiro/brute-seq/raw/ef6d482d4bd318c5eb4c61511dbe5a8dfe55312c/brute-seq/Images/Step_odd_on.png</source>
         <source file="Fonts/Inter.ttc">https://github.com/eritiro/brute-seq/raw/ef6d482d4bd318c5eb4c61511dbe5a8dfe55312c/brute-seq/Fonts/Inter.ttc</source>
+      </version>
+      <version name="0.0.3" author="eritiro" time="2025-06-13T16:46:25Z">
+        <source main="main">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/brute-seq.lua</source>
+        <source file="Modules/GUI.lua">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Modules/GUI.lua</source>
+        <source file="Modules/MIDI.lua">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Modules/MIDI.lua</source>
+        <source file="Modules/Storage.lua">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Modules/Storage.lua</source>
+        <source file="Modules/Transport.lua">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Modules/Transport.lua</source>
+        <source file="Modules/serpent.lua">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Modules/serpent.lua</source>
+        <source file="Images/Channel_button_off.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Channel_button_off.png</source>
+        <source file="Images/Channel_button_on.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Channel_button_on.png</source>
+        <source file="Images/PlayCursor_off.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/PlayCursor_off.png</source>
+        <source file="Images/PlayCursor_on.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/PlayCursor_on.png</source>
+        <source file="Images/Step_even_accent.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Step_even_accent.png</source>
+        <source file="Images/Step_even_off.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Step_even_off.png</source>
+        <source file="Images/Step_even_on.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Step_even_on.png</source>
+        <source file="Images/Step_odd_accent.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Step_odd_accent.png</source>
+        <source file="Images/Step_odd_off.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Step_odd_off.png</source>
+        <source file="Images/Step_odd_on.png">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Images/Step_odd_on.png</source>
+        <source file="Fonts/Inter.ttc">https://github.com/eritiro/brute-seq/raw/22a82c275041a5f779e02bb36e06bfd8e9b85d2b/brute-seq/Fonts/Inter.ttc</source>
       </version>
     </reapack>
   </category>
