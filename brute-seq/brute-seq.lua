@@ -102,9 +102,9 @@ local function updateCurrentPatternIndex()
     end
 end
 
-local function updateCursor(item, stepIndex)
+local function updateCursor(currentItem, nextItem)
     if followCursor then
-        jumpToStep(item, stepIndex)
+        jumpToItem(currentItem, nextItem)
     end
 end
 
@@ -219,19 +219,9 @@ local function loop()
             changedPattern, currentPatternIndex = drawSlider(ctx, '##Pattern', currentPatternIndex, 1, patternCount, 140)
             reaper.ImGui_SameLine(ctx)
             
-            local y = reaper.ImGui_GetCursorPosY(ctx)
-            reaper.ImGui_SetCursorPosY(ctx, y + 1)
-            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 5, 2)
-            removedPattern = reaper.ImGui_Button(ctx, "-")
-            reaper.ImGui_PopStyleVar(ctx)
-            reaper.ImGui_SameLine(ctx)
-
-            local y = reaper.ImGui_GetCursorPosY(ctx)
-            reaper.ImGui_SetCursorPosY(ctx, y + 1)
-            reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 2)
-            addedPattern = reaper.ImGui_Button(ctx, "+")
-            reaper.ImGui_PopStyleVar(ctx)
-            reaper.ImGui_SameLine(ctx)
+            local removePattern = drawButton(ctx, "-")
+            local addPattern = drawButton(ctx, "+")
+            local dupPattern = drawButton(ctx, "++")
 
             reaper.ImGui_Text(ctx, 'Steps:')
             reaper.ImGui_SameLine(ctx)
@@ -276,19 +266,21 @@ local function loop()
                     updateTimeSelection()
                 end
             -- Delete pattern
-            elseif removedPattern then
+            elseif removePattern then
                 removeItem(currentPattern.item)
                 updateCurrentPatternIndex()
-                currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
-                if currentPattern then
-                    updateCursor(currentPattern.item, 0)
-                end
                 updateTimeSelection()
             -- Add pattern
-            elseif addedPattern then
+            elseif addPattern then
                 newItem = createItem(sequencerTrack, currentPattern.steps > 0 and currentPattern.steps or 16)
+                updateCursor(currentPattern.item, newItem)
                 currentPatternIndex = patternCount + 1
-                updateCursor(newItem, 0)
+                updateTimeSelection()
+            elseif dupPattern then
+                newItem = createItem(sequencerTrack, currentPattern.steps)
+                copyMidiContent(currentPattern.item, newItem)
+                updateCursor(currentPattern.item, newItem)
+                currentPatternIndex = patternCount + 1
                 updateTimeSelection()
             -- Resize pattern
             elseif changedSteps or changedTimes then
@@ -304,8 +296,8 @@ local function loop()
                 updateTimeSelection()
                 reaper.Undo_EndBlock('Resize pattern',-1)
             elseif changedPattern then
-                currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
-                updateCursor(currentPattern.item, 0)
+                nextPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
+                updateCursor(currentPattern.item, nextPattern.item)
                 updateTimeSelection()
             end
         else -- if currentPattern 

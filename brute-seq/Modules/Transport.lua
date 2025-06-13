@@ -5,7 +5,7 @@ function setTimeSelectionFromItem(item)
     local length   = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
     local endPos   = startPos + length
 
-    reaper.GetSet_LoopTimeRange(true,  false,  startPos, endPos, true)
+    reaper.GetSet_LoopTimeRange(true,  true,  startPos, endPos, false)
 end
 
 function setTimeSelectionFromTrack(track)
@@ -24,7 +24,7 @@ function setTimeSelectionFromTrack(track)
         if start + len > lastEnd    then lastEnd    = start + len end
     end
 
-    reaper.GetSet_LoopTimeRange(true, false, firstStart, lastEnd, true)
+    reaper.GetSet_LoopTimeRange(true, true, firstStart, lastEnd, false)
 end
 
 function getCursorPos()
@@ -46,14 +46,23 @@ function getCurrentStep(item)
 end
 
 function jumpToStep(item, stepIdx)
-    if not item or stepIdx < 0 then return end
-
     local startPos   = reaper.GetMediaItemInfo_Value(item, 'D_POSITION')
     local secPerBeat = reaper.TimeMap2_beatsToTime(0, 1)
     local stepSize   = secPerBeat / time_resolution
     local targetPos  = startPos + stepIdx * stepSize
 
     reaper.SetEditCurPos(targetPos, true, true)
+end
+
+function jumpToItem(currentItem, nextItem)
+    local playing = reaper.GetPlayState() & 1 == 1
+    local currentStart = reaper.GetMediaItemInfo_Value(currentItem, 'D_POSITION')
+    local nextStart = reaper.GetMediaItemInfo_Value(nextItem, 'D_POSITION')
+    
+    -- it only offsets the item when playing
+    local offset = playing and (reaper.GetPlayPosition2() - currentStart) or 0
+
+    reaper.SetEditCurPos(nextStart + offset, true, true)
 end
 
 function getItemIndexAtCursor(track)

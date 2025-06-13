@@ -43,6 +43,19 @@ function createItem(track, steps)
     return newItem
 end
 
+function copyMidiContent(srcItem, dstItem)
+    local srcTake = reaper.GetActiveTake(srcItem)
+    local dstTake = reaper.GetActiveTake(dstItem)
+    -- read whole event stream from the source take
+    local _, midiData = reaper.MIDI_GetAllEvts(srcTake, "")
+
+    -- wipe any existing events in the destination take
+    reaper.MIDI_SetAllEvts(dstTake, midiData) -- paste
+    reaper.MIDI_Sort(dstTake)                 -- keep PPQ order
+
+    reaper.UpdateArrange()
+end
+
 function removeItem(item)
     reaper.DeleteTrackMediaItem(reaper.GetMediaItemTrack(item), item)
     reaper.UpdateArrange()    

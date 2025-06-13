@@ -136,3 +136,13 @@ function drawTrackLabel(ctx, sprite, text)
   local dl        = reaper.ImGui_GetWindowDrawList(ctx)
   reaper.ImGui_DrawList_AddText(dl, cx, cy, 0xFFFFFFFF, text)
 end
+
+function drawButton(ctx, text)
+  local y = reaper.ImGui_GetCursorPosY(ctx)
+  reaper.ImGui_SetCursorPosY(ctx, y + 1)
+  reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_FramePadding(), 4, 2)
+  local result = reaper.ImGui_Button(ctx, text)
+  reaper.ImGui_PopStyleVar(ctx)
+  reaper.ImGui_SameLine(ctx)
+  return result
+end
