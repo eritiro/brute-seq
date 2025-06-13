@@ -61,44 +61,43 @@ function removeItem(item)
     reaper.UpdateArrange()    
 end
 
-function getItemSteps(item)
+local function getSourceQnFromItem(item)
     local take = reaper.GetActiveTake(item)
-    if not take then return 0 end
+    local src = reaper.GetMediaItemTake_Source(take)
+    return reaper.GetMediaSourceLength(src)
+end
 
-    local src      = reaper.GetMediaItemTake_Source(take)
-    local srcLen   = reaper.GetMediaSourceLength(src) / 2  -- divided by 2 for mysterious reasons
-    local beatSec  = reaper.TimeMap2_beatsToTime(0, 1)   -- 1 beat ⇒ seg
+-- assumes fixed BPM through the item 
+local function getItemQn(item)
+    local start  = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
+    local len    = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
+    local bpm     = reaper.TimeMap_GetDividedBpmAtTime(start) 
+    return len * bpm / 60        -- seconds → beats
+end
 
-    return math.floor((srcLen / beatSec) * time_resolution + 0.5)
+function getItemSteps(item)
+    return math.floor(getSourceQnFromItem(item) * time_resolution)
 end
 
 function getItemTimes(item)
-    if not item then return 0 end
+    local sourceQn = getSourceQnFromItem(item)
+    local itemQn = getItemQn(item)
 
-    local take     = reaper.GetActiveTake(item)
-    if not take then return 1 end
-
-    local loopSrc  = reaper.GetMediaItemInfo_Value(item, "B_LOOPSRC")
-    local srcLen   = reaper.GetMediaSourceLength(reaper.GetMediaItemTake_Source(take))
-    local itemLen  = reaper.GetMediaItemInfo_Value(item, "D_LENGTH")
-
-    return math.floor(2 * itemLen / srcLen + 0.5)
+    return math.floor(itemQn / sourceQn  + 0.5)
 end
 
 function resizeSource(item, newSteps)
-    local take = reaper.GetActiveTake(item);  if not take then return end
-    local src  = reaper.GetMediaItemTake_Source(take)
-    local beatsSec   = reaper.TimeMap2_beatsToTime(0,1)
-    local newSrcLen  = (newSteps / time_resolution) * beatsSec * 2
-    local pos        = reaper.GetMediaItemInfo_Value(item,'D_POSITION') * 2
-    reaper.MIDI_SetItemExtents(item, pos, pos + newSrcLen)
+    local itemStart = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
+    local qnStart = reaper.TimeMap_timeToQN(itemStart)
+    reaper.MIDI_SetItemExtents(item, qnStart, qnStart + newSteps / time_resolution)
 end
 
 function resizeItem(item, times)
-    local take = reaper.GetActiveTake(item);  if not take then return end
-    local src  = reaper.GetMediaItemTake_Source(take)
-    local srcLen = reaper.GetMediaSourceLength(src)
-    local newLen = srcLen * times / 2
+    local start = reaper.GetMediaItemInfo_Value(item, "D_POSITION")
+    local bpm = reaper.TimeMap_GetDividedBpmAtTime(start) 
+    local sourceQn = getSourceQnFromItem(item)
+    
+    local newLen = times * sourceQn * 60 / bpm 
     reaper.SetMediaItemInfo_Value(item,'D_LENGTH', newLen)
     reaper.SetMediaItemInfo_Value(item,'B_LOOPSRC', 1)
 end
