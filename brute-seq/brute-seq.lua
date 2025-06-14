@@ -281,7 +281,6 @@ local function loop()
             changedLoopSongOption, loopSong = reaper.ImGui_Checkbox(ctx, "Loop song", loopSong)
             reaper.ImGui_SameLine(ctx)
             changedRippleOption, ripple = reaper.ImGui_Checkbox(ctx, "Ripple", ripple)
-            reaper.ImGui_SameLine(ctx)
     
             popToolbarStyles(ctx)
             reaper.ImGui_Separator(ctx)
@@ -353,12 +352,12 @@ local function loop()
             end
         end
         reaper.ImGui_PopStyleColor(ctx)
+        local popupActive = showLanesConfigPopup()
+        if not popupActive then
+            passThroughShortcuts(ctx)
+        end
+        reaper.ImGui_End(ctx)
     end
-    local popupActive = showLanesConfigPopup()
-    if not popupActive then
-        passThroughShortcuts(ctx)
-    end
-    reaper.ImGui_End(ctx)
     reaper.ImGui_PopFont(ctx)
     if open then
         reaper.defer(loop)
