@@ -1,78 +1,118 @@
-# DrumBrute Impact Step‑Sequencer for REAPER
+# Brute-Seq: DrumBrute Impact Step Sequencer for REAPER
 
-A lightweight **ReaScript + ReaImGui** tool that turns REAPER into a pattern‑based sequencer tailored to the **Arturia DrumBrute Impact**. Click, drag and loop your way to classic drum‑machine workflows without leaving REAPER’s timeline.
+Brute-Seq is a lightweight **ReaScript + ReaImGui** tool that brings a classic step-sequencer workflow to **REAPER**, specifically designed for the **Arturia DrumBrute Impact** drum machine.
 
-**Built on** and inspired by <https://github.com/Arthur-McArthur/Arthur-McArthur-ReaScripts/tree/master/McSequencer>
+Inspired by Arthur McArthur’s *McSequencer*, Brute-Seq adds multi-pattern support, accent hits, and improved usability.
 
 ![brute-seq](https://github.com/user-attachments/assets/06172d5b-8f90-4977-8761-9cd5ad8875ee)
 
 ## Features
 
-- **Track auto-setup**  
-  Detects (or creates) a track named `MIDI-Drumbrute` and maps its 10 voices to the default MIDI notes.
+### Track Auto-Setup
 
-- **Pattern per item**  
-  Allows the creation of multiple patterns that seamlessly integrates with Reaper MIDI items.
+- Automatically creates a track named `Sequencer` mapped for DrumBrute Impact's 10 drum voices.
+- Track name must end with **"Sequencer"** (e.g., "Drums Sequencer").
 
-- **Multi-step grid**  
-  Click to toggle notes, drag to paint multiple steps, right-click to erase.
+### Multiple Sequencer Tracks
 
-- **Realtime play-head**  
-  Coloured cursor column shows the current step while playing or when the edit cursor moves.
+- Supports multiple sequencer tracks in a project.
+- GUI attaches to the selected track named ending in **"sequencer"**.
 
-- **Pattern ↔ Time-selection sync**  
-  Jump between patterns, or set the time-selection to a pattern’s bounds with one click.
+### Pattern-per-Item Workflow
 
-- **Steps / Times sliders**  
-  - *Steps* → stretches or shrinks the MIDI source.  
-  - *Times* → loops the source and pushes following patterns so they never overlap.
+- Each pattern is a standard REAPER MIDI item managed as separate "blocks".
+- MIDI notes editable within and outside the sequencer.
 
-- **“Jump on Pattern Change” option**  
-  When enabled, switching the pattern slider also moves the cursor.
+### Multi-Step Grid Editor
 
-- **Spacebar passthrough**  
-  Space always Play/Stops REAPER even when the mouse is over the sequencer.
+- 16-step (or more) grid per drum voice.
+- **Left-click:** toggle step on/off.
+- **Shift+click:** accented hits (higher velocity).
 
+### Real-Time Playhead
+
+- Highlights current step during playback or cursor movement.
+
+### Pattern Navigation & Sync
+
+- Pattern selector slider to choose/edit patterns.
+- Two looping modes:
+  - **Loop Pattern:** loops current pattern.
+  - **Loop Song:** loops entire sequence.
+
+### Pattern Length & Repeats
+
+- Adjustable with sliders:
+  - **Steps:** 1 to 64 steps.
+  - **Times:** repeats pattern content.
+
+### Ripple Editing
+
+- Automatically shifts subsequent patterns to avoid overlap.
+
+### Pattern Management Buttons
+
+- **"+" Add Pattern:** New blank pattern.
+- **"++" Duplicate Pattern:** Copies current pattern.
+- **"–" Delete Pattern:** Removes current pattern.
+
+### Follow Mode (Jump on Pattern Change)
+
+- Cursor jumps to the start of selected pattern when enabled.
+
+### Spacebar Passthrough
+
+- Spacebar starts/stops REAPER playback even when sequencer window is focused.
 
 ## Installation
 
-**Dependencies**  
-   * REAPER 7+ (tested on v7.39)  
-   * ReaPack (Optional but covenient) (https://reapack.com/)
-   * [ReaImGui ≥ 0.9.3.3](https://github.com/cfillion/reaimgui) 
+### Dependencies
 
-**Pre-requisites**
+- **REAPER 7.0+** (tested on v7.39)
+- **ReaImGui v0.9.3.3+** (required)
+- **ReaPack** (recommended)
 
-1. Install ReaPack if you don't have it already (https://reapack.com/)
-2. Install ReaImGui (In Reaper, go to Extensions -> ReaPack -> Browse Packages. Search for ReaImGui and install it. You will need to restart Reaper
+### Installation via ReaPack
 
-**Instalation**
+1. **Install ReaPack**: Download from [ReaPack website](https://reapack.com).
+2. **Install ReaImGui**: `Extensions → ReaPack → Browse Packages`, search for "ReaImGui", install, and restart REAPER.
+3. **Add Brute-Seq Repository**: `Extensions → ReaPack → Import Repository`, paste:
+   ```
+   https://github.com/eritiro/brute-seq/raw/main/index.xml
+   ```
+4. **Install Brute-Seq**: `Extensions → ReaPack → Browse Packages`, search "brute-seq", install.
+5. **Load Script**: Open Action List (`Actions → Show Action List`), run "Script: brute-seq.lua".
 
-1. Extensions -> ReaPack -> Import repositories: Add https://github.com/eritiro/brute-seq/raw/main/index.xml
-2. Extensions -> ReaPack -> Browse packages: Install `brute-seq`
+## Quick Start
 
-## Quick‑start
+- Launch Brute-Seq via Action List.
+- Adds "Sequencer" track if none exists.
+- **Add patterns**: Click `"+"`.
+- **Edit grid**: Left-click toggles notes, Shift-click adds accents.
+- **Play**: Spacebar.
+- Adjust pattern length and repeats with sliders.
 
-1. Actions -> Show Actions List -> brute-seq
-2. It will create a track named **`Sequencer`**. You can rename it but it has to end with Sequencer.
-3. Click **Add Pattern** → an empty 16‑step MIDI item appears.  
-4. Toggle hits on the grid; drag across steps to paint them.  
-5. Use **Steps** and **Times** sliders to shape the pattern. Items that follow are auto‑shifted to avoid overlaps.  
-6. (Optional) Tick **Follow** so the play‑cursor follows when you move the *Pattern* slider.
+## Customizing Drum Lanes
 
-## Customising note map
+Configure drum lane mapping:
 
-Edit the `tracks` table inside the script:
+- **GUI**: `Options → Configure track lanes`, edit names and MIDI notes.
+- **Manual Edit**: Directly in `brute-seq.lua` (less recommended).
 
-```lua
-{ name = "Kick", note = 36 },
-{ name = "Snare 1", note = 37 },
-…
+Default MIDI mapping:
+
+```
+Kick (36), Snare 1 (37), Snare 2 (38), Tom 1 (43), Tom 2 (47),
+Cymbal (49), Cowbell (56), Closed Hat (60), Open Hat (61), FM Drum (64)
 ```
 
-Change `note` values to match your custom DrumBrute Impact MIDI setup or rearrange the order as needed.
+## Tips & Additional Info
+
+- **Live Performance**: Useful for improvisation; toggle Follow mode for pattern auditioning.
+- **Integration**: Patterns are regular MIDI items; freely editable in REAPER.
+- **Accent Implementation**: Accented hits use higher MIDI velocity.
+- **Undo Support**: All edits support undo (`Ctrl+Z`).
 
 ## License
 
-Released under the **GNU General Public License v3.0**.  
-Original McSequencer code © Arthur McArthur, used under GPLv3.
+Brute-Seq is open-source under **GPL v3** license. Contributions and feedback are welcome
