@@ -1,7 +1,7 @@
 -- @description brute-seq Drumbrute Impact sequencer for Reaper
 -- @author eritiro
 -- @license GPL v3
--- @version 0.0.4
+-- @version 0.0.5
 -- @provides
 --   [main] brute-seq.lua
 --   [nomain] Modules/*.lua

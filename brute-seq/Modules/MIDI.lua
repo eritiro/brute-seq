@@ -1,6 +1,15 @@
 -- @noindex
 
 function getSequencerTrack()
+    
+    local cur = reaper.GetSelectedTrack(0, 0)
+    if cur then
+        local _, curName = reaper.GetTrackName(cur, "")
+        if curName:lower():match("sequencer$") then 
+            -- it is already the right track and selected
+            return cur
+        end
+    end
     local track
     for i = 0, reaper.CountTracks(0) - 1 do
         local t = reaper.GetTrack(0, i)
