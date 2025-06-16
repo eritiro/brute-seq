@@ -123,7 +123,21 @@ function SameLineAutoWrap(ctx, widgetWidth, spacing)
   reaper.ImGui_SameLine(ctx, spacing)
 end
 
+local function fitText(txt, maxW)
+  while #txt > 0 do
+    local tw = select(1, reaper.ImGui_CalcTextSize(ctx, txt .. '...'))
+    if tw <= maxW then
+      return txt
+    end
+    txt = txt:sub(1, -2)
+  end
+  return '' -- fallback if nothing fits
+end
+
 function drawTrackLabel(ctx, sprite, text)
+  if text then
+    text = fitText(text, 90)
+  end
   reaper.ImGui_Image(ctx, sprite.i, sprite.w, sprite.h)
 
   local minX, minY = reaper.ImGui_GetItemRectMin(ctx)

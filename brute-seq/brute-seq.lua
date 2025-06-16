@@ -107,10 +107,12 @@ local function processPattern(currentPattern, lanes)
   local currentStepTotal = getCurrentStep(currentPattern.item)
   local currentStep = currentStepTotal and (currentStepTotal % currentPattern.steps) + 1 or -1
   local currentTime = currentStepTotal and (currentStepTotal // currentPattern.steps) + 1 or -1
-
+  local sequencerTrack = getSequencerTrack()
   reaper.ImGui_PushStyleVar(ctx, reaper.ImGui_StyleVar_ItemSpacing(), 2, 2) -- (x,y)
 
-  drawTrackLabel(ctx, images.Channel_button_on, 'Sequencer')
+  local _, trackName = reaper.GetTrackName(sequencerTrack, '')
+
+  drawTrackLabel(ctx, images.Channel_button_on, trackName)
   for s = 1, currentPattern.steps do
     reaper.ImGui_SameLine(ctx)
     local isCurrent = currentStep and s == currentStep
