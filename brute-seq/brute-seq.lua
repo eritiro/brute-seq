@@ -1,7 +1,7 @@
 -- @description brute-seq Drumbrute Impact sequencer for Reaper
 -- @author eritiro
 -- @license GPL v3
--- @version 0.0.5
+-- @version 0.0.6
 -- @provides
 --   [main] brute-seq.lua
 --   [nomain] Modules/*.lua
@@ -233,6 +233,7 @@ local function loop()
 
     local patternCount = reaper.CountTrackMediaItems(sequencerTrack)
     updateCurrentPatternIndex()
+    updateTimeSelection()
     local currentPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
     local command = nil
 
@@ -294,26 +295,20 @@ local function loop()
         reaper.SetExtState('BruteSeq', 'LoopPattern', loopPattern and '1' or '0', true)
         reaper.SetExtState('BruteSeq', 'LoopSong', loopSong and '1' or '0', true)
         reaper.SetExtState('BruteSeq', 'Ripple', ripple and '1' or '0', true)
-        if changedLoopPatternOption or changedLoopSongOption then
-          updateTimeSelection()
-        end
         -- Delete pattern
       elseif removePattern then
         removeItem(currentPattern.item)
         updateCurrentPatternIndex()
-        updateTimeSelection()
         -- Add pattern
       elseif addPattern then
         newItem = createItem(sequencerTrack, currentPattern.steps > 0 and currentPattern.steps or 16)
         updateCursor(currentPattern.item, newItem)
         currentPatternIndex = patternCount + 1
-        updateTimeSelection()
       elseif dupPattern then
         newItem = createItem(sequencerTrack, currentPattern.steps)
         copyMidiContent(currentPattern.item, newItem)
         updateCursor(currentPattern.item, newItem)
         currentPatternIndex = patternCount + 1
-        updateTimeSelection()
         -- Resize pattern
       elseif changedSteps or changedTimes then
         reaper.Undo_BeginBlock()
@@ -325,12 +320,10 @@ local function loop()
         if ripple then
           rippleFollowingItems(sequencerTrack, currentPattern.item, originalLength)
         end
-        updateTimeSelection()
         reaper.Undo_EndBlock('Resize pattern', -1)
       elseif changedPattern then
         nextPattern = getPattern(sequencerTrack, currentPatternIndex - 1)
         updateCursor(currentPattern.item, nextPattern.item)
-        updateTimeSelection()
       end
     else -- if currentPattern 
       reaper.ImGui_SameLine(ctx)
