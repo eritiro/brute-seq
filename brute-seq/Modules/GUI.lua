@@ -86,7 +86,7 @@ function drawSlider(ctx, label, value, minVal, maxVal, width)
   -- Draw slider
 
   reaper.ImGui_PushItemWidth(ctx, width)
-  reaper.ImGui_PushFont(ctx, fontSmall)
+  reaper.ImGui_PushFont(ctx, fontSmall, fontSize)
 
   local changed, newVal = reaper.ImGui_SliderInt(ctx, label, value, minVal, maxVal)
 
