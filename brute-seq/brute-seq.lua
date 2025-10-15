@@ -225,7 +225,7 @@ local function addMenuBar()
 end
 
 local function loop()
-  reaper.ImGui_PushFont(ctx, font)
+  reaper.ImGui_PushFont(ctx, font, 12)
   reaper.ImGui_SetNextWindowSize(ctx, 900, 420, reaper.ImGui_Cond_FirstUseEver())
   visible, open = reaper.ImGui_Begin(ctx, 'BRUTE SEQ', true, reaper.ImGui_WindowFlags_MenuBar())
   if visible then
